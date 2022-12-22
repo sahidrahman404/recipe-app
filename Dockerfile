@@ -4,12 +4,6 @@ FROM node:16-bullseye-slim as base
 # Install openssl for Prisma
 # RUN apt-get update && apt-get install -y openssl
 
-# Install curl
-# RUN apt-get update && apt-get install -y curl
-
-# Install pnpm
-# RUN curl -fsSL "https://github.com/pnpm/pnpm/releases/latest/download/pnpm-linuxstatic-x64" -o /bin/pnpm; chmod +x /bin/pnpm;
-
 # Update npm | Install pnpm | Set PNPM_HOME | Install global packages
 RUN npm i -g npm@latest; \
  # Install pnpm
@@ -27,8 +21,10 @@ FROM base as deps
 RUN mkdir /app
 WORKDIR /app
 
-ADD package.json pnpm-lock.yaml ./
-RUN pnpm install --production=false
+ADD pnpm-lock.yaml .npmrc ./
+RUN pnpm fetch
+ADD . ./
+RUN pnpm install --offline
 
 # Setup production node_modules
 FROM base as production-deps
@@ -38,12 +34,10 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules /app/node_modules
 ADD package.json pnpm-lock.yaml ./
-RUN pnpm prune --production
+RUN pnpm prune --prod
 
 # Build the app
 FROM base as build
-
-ENV NODE_ENV=production
 
 RUN mkdir /app
 WORKDIR /app
@@ -59,8 +53,6 @@ RUN pnpm build
 
 # Finally, build the production image with minimal footprint
 FROM base
-
-ENV NODE_ENV=production
 
 RUN mkdir /app
 WORKDIR /app
