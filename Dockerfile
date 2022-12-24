@@ -24,7 +24,7 @@ WORKDIR /app
 ADD pnpm-lock.yaml .npmrc ./
 RUN pnpm fetch
 ADD . ./
-RUN pnpm install --offline
+RUN pnpm install --offline --production=false
 
 # Setup production node_modules
 FROM base as production-deps
@@ -66,5 +66,4 @@ COPY --from=build /app/build /app/build
 COPY --from=build /app/public /app/public
 ADD . .
 
-ENV PORT 8080
 CMD ["pnpm", "start"]
